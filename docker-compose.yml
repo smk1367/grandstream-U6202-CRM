@@ -5,9 +5,9 @@ services:
     container_name: ucm-crm-db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ucmcrm
-      POSTGRES_USER: crm
-      POSTGRES_PASSWORD: crm123
+      POSTGRES_DB: xxxxxx
+      POSTGRES_USER: xxxxxx
+      POSTGRES_PASSWORD: xxxxxx
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
