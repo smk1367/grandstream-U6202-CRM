@@ -1,403 +1,729 @@
-<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CRM UCM6202</title><style>
-*{box-sizing:border-box}body{margin:0;font-family:Tahoma,Arial,sans-serif;background:#f4f7fb;color:#172033}.top{padding:18px 26px;background:#101828;color:#fff;display:flex;justify-content:space-between;align-items:center}.top h1{margin:0;font-size:22px}.wrap{padding:24px;max-width:1400px;margin:auto}.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}.card{background:#fff;border-radius:16px;padding:18px;box-shadow:0 5px 20px #0000000b}.num{font-size:30px;font-weight:700;margin-top:8px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:22px 0}.tabs button,.btn{border:0;border-radius:10px;padding:10px 14px;cursor:pointer;background:#e7eef8}.tabs button.active,.btn.primary{background:#101828;color:#fff}.panel{background:#fff;border-radius:16px;padding:18px;box-shadow:0 5px 20px #0000000b;margin-top:15px}.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.toolbar input{padding:11px;border:1px solid #d7dee9;border-radius:9px;min-width:260px}.table{width:100%;border-collapse:collapse}.table th,.table td{padding:11px;border-bottom:1px solid #eef1f5;text-align:right;font-size:13px}.pill{padding:5px 9px;border-radius:999px;background:#edf2f7;display:inline-block}.danger{background:#fff0f0;color:#b42318}.ok{background:#edfdf3;color:#027a48}.rowlink{cursor:pointer;color:#155eef}.empty{padding:25px;text-align:center;color:#667085}.modal{display:none;position:fixed;inset:0;background:#0007;align-items:center;justify-content:center}.modal.show{display:flex}.modalbox{background:white;border-radius:18px;padding:25px;width:min(900px,94vw);max-height:90vh;overflow:auto}.close{float:left;cursor:pointer;font-size:25px}@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.wrap{padding:12px}.table{font-size:12px}}
+<!doctype html>
+<html lang="fa" dir="rtl">
 
-/* =========================================================
-   REAL-TIME UCM CALL POPUP
-   ========================================================= */
-
-#liveCallBox {
-    display: none;
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 99999;
-    width: min(430px, calc(100vw - 40px));
-    background: #ffffff;
-    border-radius: 18px;
-    padding: 22px;
-    box-shadow: 0 18px 60px rgba(0,0,0,.22);
-    border: 2px solid #16a34a;
-    direction: rtl;
-}
-
-#liveCallBox.show {
-    display: block;
-    animation: liveCallIn .25s ease-out;
-}
-
-@keyframes liveCallIn {
-    from {
-        opacity: 0;
-        transform: translateY(-15px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-#liveCallBox .live-title {
-    font-size: 20px;
-    font-weight: 700;
-    margin-bottom: 16px;
-}
-
-#liveCallBox .live-row {
-    margin: 10px 0;
-    font-size: 15px;
-}
-
-#liveCallBox .live-label {
-    color: #667085;
-    display: inline-block;
-    min-width: 100px;
-}
-
-#liveCallClose {
-    position: absolute;
-    left: 14px;
-    top: 10px;
-    border: 0;
-    background: transparent;
-    font-size: 24px;
-    cursor: pointer;
-    color: #667085;
-}
-
-#liveCallStatus {
-    color: #16a34a;
-    font-weight: 700;
-}
-
-</style></head><body>
-
-<!-- =======================================================
-     REAL-TIME UCM CALL
-     ======================================================= -->
-
-<div id="liveCallBox">
-
-    <button id="liveCallClose" type="button" onclick="hideLiveCall()">
-        ×
-    </button>
-
-    <div class="live-title">
-        📞 تماس جدید
-    </div>
-
-    <div class="live-row">
-        <span class="live-label">شماره تماس:</span>
-        <strong id="liveCaller">-</strong>
-    </div>
-
-    <div class="live-row">
-        <span class="live-label">نام:</span>
-        <strong id="liveName">-</strong>
-    </div>
-
-    <div class="live-row">
-        <span class="live-label">مقصد:</span>
-        <strong id="liveDst">-</strong>
-    </div>
-
-    <div class="live-row">
-        <span class="live-label">داخلی:</span>
-        <strong id="liveExt">-</strong>
-    </div>
-
-    <div class="live-row">
-        <span class="live-label">وضعیت:</span>
-        <strong id="liveCallStatus">
-            در حال زنگ خوردن...
-        </strong>
-    </div>
-
-</div>
-<header class="top"><h1>CRM تلفنی Grandstream UCM6202</h1><span id="status">در حال اتصال...</span></header><main class="wrap">
-<section class="grid"><div class="card">مخاطبین<div class="num" id="contacts">-</div></div><div class="card">کل تماس‌ها<div class="num" id="total">-</div></div><div class="card">تماس ورودی<div class="num" id="inbound">-</div></div><div class="card">تماس خروجی<div class="num" id="outbound">-</div></div><div class="card">از دست‌رفته<div class="num" id="missed">-</div></div></section>
-<div class="tabs"><button class="active" onclick="showTab('dashboard',this)">داشبورد</button><button onclick="showTab('cdr',this)">CDR</button><button onclick="showTab('contactsTab',this)">مخاطبین</button><button onclick="syncNow()">همگام‌سازی UCM</button></div>
-<section id="dashboard" class="panel"><h2>تماس‌های اخیر</h2><p style="color:#667085">همگام‌سازی خودکار هر 60 ثانیه انجام می‌شود. برای دریافت فوری، «همگام‌سازی UCM» را بزنید.</p><div id="recent"></div></section>
-<section id="cdr" class="panel" style="display:none"><div class="toolbar"><input id="search" placeholder="جستجوی شماره یا نام..." oninput="loadCdr()"><button class="btn" onclick="loadCdr()">بروزرسانی</button></div><div id="cdrTable"></div></section>
-<section id="contactsTab" class="panel" style="display:none"><div class="toolbar"><input id="contactSearch" placeholder="جستجوی مخاطب..." oninput="loadContacts()"><button class="btn primary" onclick="newContact()">مخاطب جدید</button></div><div id="contactsTable"></div></section>
-</main><div id="modal" class="modal"><div class="modalbox"><span class="close" onclick="closeModal()">×</span><div id="modalContent"></div></div></div>
-<script>
-const $=id=>document.getElementById(id); async function api(path,opt){let r=await fetch(path,opt); if(!r.ok) throw new Error(await r.text()); return r.json()}
-function fmtDirection(d){return d==='inbound'?'ورودی':d==='outbound'?'خروجی':'داخلی'}
-function table(rows){if(!rows.length)return '<div class="empty">اطلاعاتی وجود ندارد</div>'; return `<table class="table"><tr><th>زمان</th><th>مشتری</th><th>شماره</th><th>نوع</th><th>داخلی</th><th>وضعیت</th><th>مدت</th><th>Recording</th></tr>${rows.map(x=>{let phone=x.direction==='inbound'?x.caller:(x.direction==='outbound'?x.callee:(x.caller||x.callee));return `<tr><td>${x.start_time||'-'}</td><td class="rowlink" onclick="openCustomer('${String(phone||'').replace(/'/g,"\\'")}')">${x.customer||x.caller_name||'-'}</td><td>${phone||'-'}</td><td><span class="pill">${fmtDirection(x.direction)}</span></td><td>${x.answer_by||'-'}</td><td><span class="pill ${x.disposition&&x.disposition.toLowerCase().includes('answer')?'ok':'danger'}">${x.disposition||'-'}</span></td><td>${x.talk_time||x.call_time||'-'}</td><td>${x.recordfiles?'<button class="btn" onclick="alert(\'Recording: '+String(x.recordfiles).replace(/'/g,"\\'")+'\')">▶</button>':'-'}</td></tr>`}).join('')}</table>`}
-async function load(){try{let d=await api('/api/dashboard'); Object.entries(d.stats).forEach(([k,v])=>$(k).textContent=v); $('recent').innerHTML=table(d.recent); $('status').textContent='متصل';}catch(e){$('status').textContent='خطا در اتصال به UCM/Backend'}}
-async function loadCdr(){try{$('cdrTable').innerHTML=table(await api('/api/cdr?limit=200&search='+encodeURIComponent($('search').value)))}catch(e){$('cdrTable').innerHTML='<div class="empty">خطا در دریافت CDR</div>'}}
-async function loadContacts(){let r=await api('/api/contacts?search='+encodeURIComponent($('contactSearch').value));$('contactsTable').innerHTML=r.length?`<table class="table"><tr><th>نام</th><th>شماره</th><th>شرکت</th><th>سوابق</th></tr>${r.map(x=>`<tr><td>${x.name}</td><td>${x.phone}</td><td>${x.company||'-'}</td><td><button class="btn" onclick="openCustomer('${x.phone}')">مشاهده</button></td></tr>`).join('')}</table>`:'<div class="empty">مخاطبی ثبت نشده</div>'}
-async function openCustomer(phone){let r=await api('/api/customer/'+encodeURIComponent(phone));let c=r.contact; $('modalContent').innerHTML=`<h2>${c?c.name:phone}</h2><p>شماره: ${phone} ${c&&c.company?' | شرکت: '+c.company:''}</p><h3>تاریخچه تماس</h3>${table(r.calls)}`;$('modal').classList.add('show')}
-function closeModal(){$('modal').classList.remove('show')}
-async function syncNow(){ $('status').textContent='در حال همگام‌سازی...'; try{await api('/api/sync',{method:'POST'});await load();await loadCdr();$('status').textContent='همگام شد'}catch(e){$('status').textContent='خطای Sync'}}
-function showTab(id,b){['dashboard','cdr','contactsTab'].forEach(x=>$(x).style.display=x===id?'block':'none');document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(id==='cdr')loadCdr();if(id==='contactsTab')loadContacts()}
-function newContact(){let n=prompt('نام مشتری:');if(!n)return;let p=prompt('شماره:');if(!p)return;fetch('/api/contacts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,phone:p})}).then(()=>loadContacts())}
-function playRec(v){alert('Recording در نسخه اول از API گران‌استریم گرفته می‌شود. recordfiles خام: '+v)}
-load();setInterval(load,30000)
-</script>
-<script>
-
-/* =========================================================
-   REAL-TIME UCM CALL MONITOR
-   ========================================================= */
-
-let lastLiveSignature = "";
-let liveTimer = null;
-
-
-function getPayloadValue(payload, keys) {
-
-    if (!payload) {
-        return "";
-    }
-
-    for (const key of keys) {
-
-        if (
-            payload[key] !== undefined &&
-            payload[key] !== null &&
-            String(payload[key]).trim() !== ""
-        ) {
-            return String(payload[key]).trim();
-        }
-    }
-
-    return "";
-}
-
-
-function hideLiveCall() {
-
-    const box = document.getElementById("liveCallBox");
-
-    if (box) {
-        box.classList.remove("show");
-    }
-}
-
-
-function showLiveCall(event) {
-    const payload = event?.payload || {};
-    const normalized = payload?.normalized || {};
-    const data = payload?.data || {};
-
-    // داده‌های Normalize شده اولویت دارند
-    const caller =
-        normalized.caller_number ||
-        normalized.src ||
-        data.src ||
-        "";
-
-    const dst =
-        normalized.destination ||
-        normalized.dst ||
-        data.dst ||
-        "";
-
-    const name =
-        normalized.caller_name ||
-        normalized.clid ||
-        data.caller_name ||
-        data.clid ||
-        "";
-
-    let ext =
-        normalized.extension ||
-        normalized.dstchannel_ext ||
-        data.dstchannel_ext ||
-        data.channel_ext ||
-        "";
-
-    // اگر داخلی هنوز مستقیم مشخص نشده ولی مقصد یک داخلی است
-    if (
-        !ext &&
-        normalized.call_type === "inbound" &&
-        /^\d+$/.test(String(dst))
-    ) {
-        ext = dst;
-    }
-
-    const callType = normalized.call_type || "";
-
-    let status = normalized.status || "";
-
-    // وضعیت قابل فهم برای کاربر
-    if (status === "no_answer") {
-        status = "پاسخ داده نشد";
-    } else if (status === "answered") {
-        status = "پاسخ داده شد";
-    } else if (status === "busy") {
-        status = "مشغول";
-    } else if (status === "failed") {
-        status = "ناموفق";
-    } else if (!status) {
-        status = "در حال زنگ خوردن...";
-    }
-
-    document.getElementById("liveCaller").textContent =
-        caller || "-";
-
-    document.getElementById("liveName").textContent =
-        name || "-";
-
-    document.getElementById("liveDst").textContent =
-        dst || "-";
-
-    document.getElementById("liveExt").textContent =
-        ext || "-";
-
-    document.getElementById("liveCallStatus").textContent =
-        status;
-
-    document.getElementById("liveCallBox").classList.add("show");
-
-    clearTimeout(liveTimer);
-
-    // تماس زنده را 30 ثانیه نگه دار
-    liveTimer = setTimeout(
-        hideLiveCall,
-        30000
-    );
-}
-async function checkLiveCalls() {
-    try {
-        const response = await fetch("/api/live", {
-            cache: "no-store"
-        });
-
-        if (!response.ok) {
-            return;
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>CRM تلفنی Grandstream UCM6202</title>
+    <style>
+        * {
+            box-sizing: border-box
         }
 
-        const data = await response.json();
+        body {
+            margin: 0;
+            font-family: Tahoma, Arial, sans-serif;
+            background: #f4f7fb;
+            color: #172033
+        }
 
-        // اولویت با تماس‌های Normalize شده
-        if (Array.isArray(data.calls) && data.calls.length > 0) {
-            const calls = data.calls.filter(call =>
-                call &&
-                (
-                    call.caller_number ||
-                    call.src ||
-                    call.dst ||
-                    call.destination
-                )
-            );
+        .top {
+            padding: 16px 24px;
+            background: #101828;
+            color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 15
+        }
 
-            if (calls.length > 0) {
-                const call = calls[0];
+        .top h1 {
+            margin: 0;
+            font-size: 21px
+        }
 
-                const event = {
-                    received_at: call.received_at || "",
-                    raw: "",
-                    payload: {
-                        normalized: call,
-                        data: call.raw_cdr || {}
-                    }
-                };
+        .top-right {
+            display: flex;
+            align-items: center;
+            gap: 10px
+        }
 
-                const signature =
-                    String(call.session || "") +
-                    "|" +
-                    String(call.caller_number || call.src || "") +
-                    "|" +
-                    String(call.destination || call.dst || "") +
-                    "|" +
-                    String(call.status || "") +
-                    "|" +
-                    String(call.action_type || "");
+        .wrap {
+            padding: 22px;
+            max-width: 1650px;
+            margin: auto
+        }
 
-                if (signature !== lastLiveSignature) {
-                    lastLiveSignature = signature;
-                    showLiveCall(event);
-                }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 14px
+        }
 
-                return;
+        .grid.more {
+            grid-template-columns: repeat(4, 1fr);
+            margin-top: 14px
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 5px 20px #0000000b
+        }
+
+        .num {
+            font-size: 30px;
+            font-weight: 700;
+            margin-top: 8px
+        }
+
+        .small {
+            font-size: 12px;
+            color: #667085
+        }
+
+        .clickable {
+            cursor: pointer
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 20px 0
+        }
+
+        .tabs button,
+        .btn {
+            border: 0;
+            border-radius: 10px;
+            padding: 10px 14px;
+            cursor: pointer;
+            background: #e7eef8;
+            color: #172033
+        }
+
+        .tabs button.active,
+        .btn.primary {
+            background: #101828;
+            color: #fff
+        }
+
+        .btn.danger {
+            background: #fff0f0;
+            color: #b42318
+        }
+
+        .btn.success {
+            background: #ecfdf3;
+            color: #067647
+        }
+
+        .btn.warn {
+            background: #fffaeb;
+            color: #b54708
+        }
+
+        .panel {
+            background: #fff;
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 5px 20px #0000000b;
+            margin-top: 15px
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 14px
+        }
+
+        .toolbar input,
+        .toolbar select {
+            padding: 10px;
+            border: 1px solid #d7dee9;
+            border-radius: 9px;
+            min-width: 170px;
+            background: #fff
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse
+        }
+
+        .table th,
+        .table td {
+            padding: 10px;
+            border-bottom: 1px solid #eef1f5;
+            text-align: right;
+            font-size: 13px;
+            vertical-align: middle
+        }
+
+        .pill {
+            padding: 5px 9px;
+            border-radius: 999px;
+            background: #edf2f7;
+            display: inline-block
+        }
+
+        .dangerpill {
+            background: #fff0f0;
+            color: #b42318
+        }
+
+        .ok {
+            background: #edfdf3;
+            color: #027a48
+        }
+
+        .rowlink {
+            cursor: pointer;
+            color: #155eef
+        }
+
+        .empty {
+            padding: 25px;
+            text-align: center;
+            color: #667085
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: #0007;
+            align-items: center;
+            justify-content: center;
+            z-index: 70
+        }
+
+        .modal.show {
+            display: flex
+        }
+
+        .modalbox {
+            background: #fff;
+            border-radius: 18px;
+            padding: 25px;
+            width: min(1050px, 95vw);
+            max-height: 92vh;
+            overflow: auto
+        }
+
+        .close {
+            float: left;
+            cursor: pointer;
+            font-size: 25px
+        }
+
+        .formgrid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px
+        }
+
+        .formgrid .full {
+            grid-column: 1/-1
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 7px
+        }
+
+        .field label {
+            font-size: 13px;
+            color: #475467
+        }
+
+        .field input,
+        .field textarea,
+        .field select {
+            padding: 11px;
+            border: 1px solid #d0d5dd;
+            border-radius: 9px;
+            font-family: inherit
+        }
+
+        .field textarea {
+            min-height: 90px;
+            resize: vertical
+        }
+
+        .phone-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px
+        }
+
+        .phone-row input {
+            flex: 1
+        }
+
+        .recording {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            min-width: 220px;
+            flex-wrap: wrap
+        }
+
+        .recording audio {
+            width: 220px;
+            height: 36px
+        }
+
+        .uploadbox {
+            padding: 12px;
+            border: 1px dashed #98a2b3;
+            border-radius: 10px;
+            background: #fafbfc
+        }
+
+        .toast {
+            position: fixed;
+            left: 20px;
+            bottom: 20px;
+            background: #101828;
+            color: #fff;
+            padding: 12px 16px;
+            border-radius: 10px;
+            display: none;
+            z-index: 90;
+            max-width: min(600px, 90vw)
+        }
+
+        .toast.show {
+            display: block
+        }
+
+        .live-call {
+            position: fixed;
+            right: 20px;
+            top: 76px;
+            width: min(420px, calc(100vw - 40px));
+            background: #fff;
+            border: 1px solid #d0d5dd;
+            border-radius: 16px;
+            box-shadow: 0 12px 35px #0003;
+            padding: 16px;
+            display: none;
+            z-index: 60
+        }
+
+        .live-call.show {
+            display: block
+        }
+
+        .live-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px
+        }
+
+        .live-title {
+            font-weight: 700
+        }
+
+        .live-close {
+            cursor: pointer;
+            font-size: 22px
+        }
+
+        .live-number {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 8px 0
+        }
+
+        .live-meta {
+            font-size: 13px;
+            color: #475467;
+            line-height: 1.8
+        }
+
+        .live-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap
+        }
+
+        .section-title {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 12px
+        }
+
+        .kpis {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px
+        }
+
+        .mini {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 14px
+        }
+
+        .mini .label {
+            font-size: 12px;
+            color: #667085
+        }
+
+        .mini .value {
+            font-size: 23px;
+            font-weight: 700;
+            margin-top: 6px
+        }
+
+        .barrow {
+            display: grid;
+            grid-template-columns: 70px 1fr 70px;
+            gap: 8px;
+            align-items: center;
+            margin: 9px 0
+        }
+
+        .bar {
+            height: 12px;
+            border-radius: 20px;
+            background: #e4e7ec;
+            overflow: hidden
+        }
+
+        .bar>i {
+            display: block;
+            height: 100%;
+            background: #344054
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: #f2f4f7;
+            font-size: 12px
+        }
+
+        .stage-board {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            overflow: auto
+        }
+
+        .stage {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 10px;
+            min-height: 140px
+        }
+
+        .stage h4 {
+            margin: 4px 0 10px
+        }
+
+        .stage .item {
+            background: #fff;
+            border-radius: 10px;
+            padding: 9px;
+            margin-bottom: 8px;
+            border: 1px solid #eef1f5
+        }
+
+        .auth {
+            display: inline-flex;
+            gap: 8px;
+            align-items: center
+        }
+
+        .hidden {
+            display: none !important
+        }
+
+        .loginbox {
+            width: min(420px, 92vw)
+        }
+
+        @media(max-width:1100px) {
+            .grid {
+                grid-template-columns: repeat(2, 1fr)
+            }
+
+            .grid.more {
+                grid-template-columns: repeat(2, 1fr)
+            }
+
+            .kpis {
+                grid-template-columns: repeat(2, 1fr)
+            }
+
+            .stage-board {
+                grid-template-columns: repeat(3, minmax(210px, 1fr))
+            }
+
+            .formgrid {
+                grid-template-columns: 1fr
+            }
+
+            .formgrid .full {
+                grid-column: auto
             }
         }
 
-        // fallback برای Eventهای خام
-        if (
-            !Array.isArray(data.events) ||
-            data.events.length === 0
-        ) {
-            return;
-        }
+        @media(max-width:620px) {
 
-        let validEvent = null;
+            .grid,
+            .grid.more,
+            .kpis {
+                grid-template-columns: 1fr
+            }
 
-        for (const event of data.events) {
-            const normalized = event?.payload?.normalized;
+            .wrap {
+                padding: 12px
+            }
 
-            if (
-                normalized &&
-                (
-                    normalized.caller_number ||
-                    normalized.src ||
-                    normalized.dst ||
-                    normalized.destination
-                )
-            ) {
-                validEvent = event;
-                break;
+            .table {
+                display: block;
+                overflow: auto
+            }
+
+            .recording audio {
+                width: 160px
+            }
+
+            .top {
+                align-items: flex-start;
+                flex-direction: column
             }
         }
+    </style>
+</head>
 
-        if (!validEvent) {
-            return;
+<body>
+    <header class="top">
+        <h1>CRM تلفنی Grandstream UCM6202</h1>
+        <div class="top-right"><span id="status">در حال اتصال...</span><span id="authInfo" class="auth"></span><button
+                class="btn hidden" id="loginBtn" onclick="openLogin()">ورود</button><button class="btn hidden"
+                id="logoutBtn" onclick="logout()">خروج</button></div>
+    </header>
+    <main class="wrap">
+        <section class="grid">
+            <div class="card">مخاطبین<div class="num" id="contacts">-</div>
+            </div>
+            <div class="card">کل تماس‌ها<div class="num" id="total">-</div>
+            </div>
+            <div class="card">تماس ورودی<div class="num" id="inbound">-</div>
+            </div>
+            <div class="card">تماس خروجی<div class="num" id="outbound">-</div>
+            </div>
+            <div class="card clickable" onclick="showMissed()">از دست‌رفته<div class="num" id="missed">-</div>
+            </div>
+        </section>
+        <section class="grid more">
+            <div class="card">پیگیری امروز<div class="num" id="followups_today">-</div>
+            </div>
+            <div class="card">پیگیری عقب‌افتاده<div class="num" id="followups_overdue">-</div>
+            </div>
+            <div class="card">فرصت‌های باز<div class="num" id="open_opportunities">-</div>
+            </div>
+            <div class="card">فروش قطعی<div class="num" id="won_value">-</div>
+                <div class="small">مبلغ تجمعی</div>
+            </div>
+        </section>
+        <div class="tabs">
+            <button class="active" onclick="showTab('dashboard',this)">داشبورد</button>
+            <button onclick="showTab('cdr',this)">CDR</button><button onclick="showTab('missedTab',this)">از
+                دست‌رفته</button><button onclick="showTab('contactsTab',this)">مخاطبین</button>
+            <button id="salesTabBtn" class="hidden" onclick="showTab('salesTab',this)">فروش و پیگیری</button><button
+                id="mgmtTabBtn" class="hidden" onclick="showTab('managementTab',this)">مدیریت و KPI</button><button
+                id="reportTabBtn" class="hidden" onclick="showTab('reportsTab',this)">گزارش داخلی‌ها</button>
+            <button onclick="syncNow()">همگام‌سازی UCM</button>
+        </div>
+        <section id="dashboard" class="panel">
+            <div class="section-title">
+                <h2>تماس‌های اخیر</h2><span class="small">Live Call بدون تغییر حفظ شده است.</span>
+            </div>
+            <div id="recent"></div>
+        </section>
+        <section id="cdr" class="panel hidden">
+            <div class="toolbar"><input id="search" placeholder="جستجوی شماره یا نام..." oninput="loadCdr()"><button
+                    class="btn" onclick="loadCdr()">بروزرسانی</button></div>
+            <div id="cdrTable"></div>
+        </section>
+        <section id="missedTab" class="panel hidden">
+            <div class="toolbar"><button class="btn" onclick="loadMissed()">بروزرسانی از دست‌رفته‌ها</button></div>
+            <div id="missedTable"></div>
+        </section>
+        <section id="contactsTab" class="panel hidden">
+            <div class="toolbar"><input id="contactSearch" placeholder="جستجوی مخاطب..."
+                    oninput="loadContacts()"><button class="btn primary" onclick="newContact()">مخاطب
+                    جدید</button><button class="btn" onclick="document.getElementById('contactFile').click()">افزودن از
+                    فایل</button><input id="contactFile" type="file" accept=".csv,.xlsx,.tsv,.txt" hidden
+                    onchange="importContacts(this.files[0])"></div>
+            <div class="small uploadbox" style="margin-bottom:12px">ستون‌های `name, phone, phone2, phone3, company,
+                notes` و ستون‌های فارسی متناظر به‌همراه ستون‌های اختیاری `owner_extension, customer_status, score,
+                next_followup, followup_note` قابل ورود هستند.</div>
+            <div id="contactsTable"></div>
+        </section>
+        <section id="salesTab" class="panel hidden">
+            <div class="section-title">
+                <h2>مرکز فروش و پیگیری</h2><button class="btn primary" onclick="newOpportunity()">+ فرصت فروش</button>
+            </div>
+            <div class="kpis">
+                <div class="mini">
+                    <div class="label">کارهای امروز</div>
+                    <div class="value" id="salesToday">-</div>
+                </div>
+                <div class="mini">
+                    <div class="label">عقب‌افتاده</div>
+                    <div class="value" id="salesOverdue">-</div>
+                </div>
+                <div class="mini">
+                    <div class="label">مشتری داغ</div>
+                    <div class="value" id="hotCustomers">-</div>
+                </div>
+                <div class="mini">
+                    <div class="label">فرصت باز</div>
+                    <div class="value" id="salesOpenOpps">-</div>
+                </div>
+            </div>
+            <div style="margin-top:16px">
+                <h3>کارهای امروز</h3>
+                <div id="actionCenter"></div>
+            </div>
+            <div style="margin-top:18px">
+                <h3>قیف فروش</h3>
+                <div id="pipeline" class="stage-board"></div>
+            </div>
+        </section>
+        <section id="managementTab" class="panel hidden">
+            <div class="toolbar"><label>از <input id="mgStart" type="date"></label><label>تا <input id="mgEnd"
+                        type="date"></label><button class="btn primary" onclick="loadManagement()">اعمال گزارش</button>
+            </div>
+            <div class="kpis">
+                <div class="mini">
+                    <div class="label">کل تماس</div>
+                    <div class="value" id="mgTotal">-</div>
+                </div>
+                <div class="mini">
+                    <div class="label">پاسخ</div>
+                    <div class="value" id="mgAnswered">-</div>
+                </div>
+                <div class="mini">
+                    <div class="label">بی‌پاسخ</div>
+                    <div class="value" id="mgMissed">-</div>
+                </div>
+                <div class="mini">
+                    <div class="label">فروش</div>
+                    <div class="value" id="mgSalesValue">-</div>
+                </div>
+            </div>
+            <h3 style="margin-top:18px">رتبه و عملکرد داخلی‌ها</h3>
+            <div id="mgRows"></div>
+            <div class="formgrid" style="margin-top:18px">
+                <div>
+                    <h3>ساعات پرترافیک</h3>
+                    <div id="hourly"></div>
+                </div>
+                <div>
+                    <h3>دلایل از دست رفتن فروش</h3>
+                    <div id="lostReasons"></div>
+                </div>
+            </div>
+        </section>
+        <section id="reportsTab" class="panel hidden">
+            <div class="toolbar"><label>از <input id="rpStart" type="date"></label><label>تا <input id="rpEnd"
+                        type="date"></label><button class="btn primary" onclick="loadInternalReports()">گزارش
+                    داخلی‌ها</button></div>
+            <div id="internalReports"></div>
+        </section>
+    </main>
+    <div id="liveCall" class="live-call">
+        <div class="live-head">
+            <div class="live-title">📞 تماس جدید</div><span class="live-close" onclick="hideLiveCall()">×</span>
+        </div>
+        <div id="liveCustomer" class="live-number">-</div>
+        <div id="liveMeta" class="live-meta"></div>
+        <div class="live-actions"><button class="btn primary" onclick="openLiveCustomer()">مشاهده مشخصات</button><button
+                class="btn" onclick="addLiveContact()">➕ افزودن به مخاطبین</button><button class="btn"
+                onclick="hideLiveCall()">بستن</button></div>
+    </div>
+    <div id="modal" class="modal">
+        <div class="modalbox"><span class="close" onclick="closeModal()">×</span>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+    <div id="toast" class="toast"></div>
+    <div id="loginModal" class="modal">
+        <div class="modalbox loginbox"><span class="close" onclick="closeLogin()">×</span>
+            <h2>ورود</h2>
+            <div class="field"><label>نام کاربری</label><input id="loginUser"></div>
+            <div class="field" style="margin-top:10px"><label>رمز عبور</label><input id="loginPass" type="password">
+            </div><button class="btn primary" style="margin-top:14px" onclick="login()">ورود</button>
+        </div>
+    </div>
+    <script>
+        const $ = id => document.getElementById(id); let currentContactId = null; let liveSeq = Number(localStorage.getItem('ucm_live_seq') || 0); let livePhone = ''; let currentUser = null;
+        async function api(path, opt = {}) {opt.headers = opt.headers || {}; const tok = localStorage.getItem('ucm_token'); if (tok) opt.headers.Authorization = 'Bearer ' + tok; let r = await fetch(path, opt); if (!r.ok) {let t = await r.text(); throw new Error(t || ('HTTP ' + r.status))} return r.json()}
+        function esc(v) {return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;')}
+        function fmtDirection(d) {return d === 'inbound' ? 'ورودی' : d === 'outbound' ? 'خروجی' : 'داخلی'}
+        function fmtMoney(v) {return Number(v || 0).toLocaleString('fa-IR') + ' تومان'}
+        function recordingHtml(x) {if (!x.recordings || !x.recordings.length) return '-'; return x.recordings.map(r => `<div class="recording"><audio controls preload="metadata" src="${esc(r.url)}" onerror="this.parentElement.querySelector('.recerr').textContent='فایل ضبط از UCM قابل دریافت نیست'"></audio><a class="small" href="${esc(r.url)}" target="_blank">باز کردن فایل</a><span class="small recerr"></span></div>`).join('')}
+        function table(rows) {if (!rows.length) return '<div class="empty">اطلاعاتی وجود ندارد</div>'; return `<table class="table"><tr><th>زمان</th><th>مشتری</th><th>شماره</th><th>نوع</th><th>داخلی</th><th>وضعیت</th><th>نتیجه</th><th>مدت</th><th>ضبط</th><th>عملیات</th></tr>${rows.map(x => {let phone = x.direction === 'inbound' ? x.caller : (x.direction === 'outbound' ? x.callee : (x.caller || x.callee)); let miss = x.direction === 'inbound' && String(x.disposition || '').toUpperCase() !== 'ANSWERED'; return `<tr><td>${esc(x.start_time || '-')}</td><td class="rowlink" onclick="openCustomer('${esc(phone || '')}')">${esc(x.customer || x.caller_name || '-')}</td><td>${esc(phone || '-')}</td><td><span class="pill">${fmtDirection(x.direction)}</span></td><td>${esc(x.answer_by || '-')}</td><td><span class="pill ${miss ? 'dangerpill' : 'ok'}">${esc(x.disposition || '-')}</span></td><td>${esc(x.outcome || '-')}</td><td>${esc(x.talk_time || x.call_time || '-')}</td><td>${recordingHtml(x)}</td><td>${x.id ? `<button class="btn" onclick="outcomeForm(${x.id},'${esc(phone || '')}','${esc(x.outcome || '')}','${esc(x.call_notes || '')}')">نتیجه تماس</button>` : '-'}</td></tr>`}).join('')}</table>`}
+        async function load() {try {let d = await api('/api/dashboard'); Object.entries(d.stats).forEach(([k, v]) => {let el = $(k); if (el) el.textContent = k === 'won_value' ? fmtMoney(v) : v}); $('recent').innerHTML = table(d.recent); $('status').textContent = 'متصل'; loadSales();} catch (e) {$('status').textContent = 'خطا در اتصال'; console.error(e)} }
+        async function refreshMe() {try {currentUser = await api('/api/me');} catch {currentUser = null} renderAuth()}
+        function renderAuth() {let logged = !!localStorage.getItem('ucm_token') && currentUser && currentUser.username !== 'guest'; $('loginBtn').classList.toggle('hidden', logged); $('logoutBtn').classList.toggle('hidden', !logged); $('authInfo').textContent = logged ? `${esc(currentUser.username)} (${esc(currentUser.role)})` : ''; let canMgr = logged && ['full', 'manager'].includes(currentUser.role), canSales = logged && ['full', 'manager', 'sales'].includes(currentUser.role); $('mgmtTabBtn').classList.toggle('hidden', !canMgr); $('reportTabBtn').classList.toggle('hidden', !canMgr); $('salesTabBtn').classList.toggle('hidden', !canSales)}
+        function openLogin() {$('loginModal').classList.add('show'); $('loginUser').focus()} function closeLogin() {$('loginModal').classList.remove('show')}
+        async function login() {try {let r = await fetch('/api/login', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username: $('loginUser').value.trim(), password: $('loginPass').value})}); if (!r.ok) throw new Error(await r.text()); let d = await r.json(); localStorage.setItem('ucm_token', d.token); currentUser = d.user; closeLogin(); renderAuth(); toast('ورود موفق بود')} catch (e) {toast('خطا در ورود: ' + e.message)} }
+        function logout() {localStorage.removeItem('ucm_token'); currentUser = null; renderAuth(); showTab('dashboard', document.querySelector('.tabs button'))}
+        async function loadCdr() {try {$('cdrTable').innerHTML = table(await api('/api/cdr?limit=200&search=' + encodeURIComponent($('search').value)))} catch (e) {$('cdrTable').innerHTML = '<div class="empty">خطا در دریافت CDR</div>'} }
+        async function loadMissed() {try {$('missedTable').innerHTML = table(await api('/api/cdr?limit=500&missed_only=true'))} catch (e) {$('missedTable').innerHTML = '<div class="empty">خطا در دریافت از دست‌رفته‌ها</div>'} }
+        function showMissed() {let b = [...document.querySelectorAll('.tabs button')].find(x => x.textContent.includes('از دست‌رفته')); showTab('missedTab', b); loadMissed()}
+        async function loadContacts() {try {let r = await api('/api/contacts?search=' + encodeURIComponent($('contactSearch').value)); $('contactsTable').innerHTML = r.length ? `<table class="table"><tr><th>نام</th><th>شماره اصلی</th><th>شماره‌های دیگر</th><th>شرکت</th><th>وضعیت</th><th>امتیاز</th><th>مسئول</th><th>پیگیری بعدی</th><th>عملیات</th></tr>${r.map(x => `<tr><td>${esc(x.name)}</td><td>${esc(x.phone)}</td><td>${esc((x.phones || []).slice(1).join('، ') || '-')}</td><td>${esc(x.company || '-')}</td><td><span class="tag">${esc(statusLabel(x.customer_status))}</span></td><td>${esc(x.score || 0)}</td><td>${esc(x.owner_extension || '-')}</td><td>${esc(x.next_followup || '-')}</td><td><button class="btn" onclick="editContact(${x.id})">ویرایش</button> <button class="btn" onclick="openCustomer('${esc(x.phone)}')">سوابق</button> <button class="btn success" onclick="window.location.href='tel:${esc(x.phone)}'">📞 تماس</button> <button class="btn warn" onclick="quickFollowup(${x.id})">پیگیری</button></td></tr>`).join('')}</table>` : '<div class="empty">مخاطبی ثبت نشده</div>'} catch (e) {$('contactsTable').innerHTML = '<div class="empty">خطا در دریافت مخاطبین</div>'} }
+        function statusLabel(x) {return ({lead: 'سرنخ', contacted: 'تماس گرفته شده', negotiation: 'در حال مذاکره', proposal: 'پیشنهاد قیمت', decision: 'در انتظار تصمیم', customer: 'مشتری', lost: 'از دست رفته'})[x] || x || '-'}
+        function contactForm(c) {currentContactId = c?.id || null; let phones = (c?.phones || [c?.phone || '']).filter(Boolean); if (!phones.length) phones = ['']; $('modalContent').innerHTML = `<h2>${c ? 'ویرایش مخاطب' : 'مخاطب جدید'}</h2><div class="formgrid"><div class="field"><label>نام</label><input id="f_name" value="${esc(c?.name || '')}"></div><div class="field"><label>شرکت</label><input id="f_company" value="${esc(c?.company || '')}"></div><div class="field"><label>مسئول / داخلی فروش</label><input id="f_owner" value="${esc(c?.owner_extension || '')}" placeholder="101"></div><div class="field"><label>وضعیت مشتری</label><select id="f_status">${['lead', 'contacted', 'negotiation', 'proposal', 'decision', 'customer', 'lost'].map(v => `<option value="${v}" ${(c?.customer_status || 'lead') === v ? 'selected' : ''}>${statusLabel(v)}</option>`).join('')}</select></div><div class="field"><label>امتیاز مشتری (0 تا 100)</label><input id="f_score" type="number" min="0" max="100" value="${Number(c?.score ?? 50)}"></div><div class="field"><label>پیگیری بعدی</label><input id="f_followup" type="datetime-local" value="${esc((c?.next_followup || '').replace(' ', 'T'))}"></div><div class="field full"><label>شماره تلفن‌ها</label><div id="phoneList">${phones.map(p => `<div class="phone-row"><input value="${esc(p)}" placeholder="شماره تلفن"/><button class="btn" type="button" onclick="this.parentElement.remove()">حذف</button></div>`).join('')}</div><button class="btn" type="button" onclick="addPhoneRow()">+ شماره دیگر</button></div><div class="field full"><label>توضیح پیگیری</label><textarea id="f_followup_note">${esc(c?.followup_note || '')}</textarea></div><div class="field full"><label>یادداشت</label><textarea id="f_notes">${esc(c?.notes || '')}</textarea></div><div class="field"><label>دلیل از دست رفتن</label><input id="f_lost" value="${esc(c?.lost_reason || '')}"></div></div><div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" onclick="saveContact()">ذخیره</button><button class="btn" onclick="newOpportunityForCurrent()">+ فرصت فروش</button>${c ? '<button class="btn danger" onclick="deleteContact()">حذف مخاطب</button>' : ''}</div>`; $('modal').classList.add('show')}
+        function addPhoneRow(v = '') {let d = document.createElement('div'); d.className = 'phone-row'; d.innerHTML = `<input value="${esc(v)}" placeholder="شماره تلفن"/><button class="btn" type="button" onclick="this.parentElement.remove()">حذف</button>`; $('phoneList').appendChild(d)}
+        async function editContact(id) {try {let list = await api('/api/contacts'); let c = list.find(x => x.id === id); if (c) contactForm(c)} catch (e) {toast('خطا در دریافت مخاطب')} }
+        function newContact() {contactForm(null)}
+        async function saveContact() {let inputs = [...document.querySelectorAll('#phoneList input')]; let nums = inputs.map(x => x.value.trim()).filter(Boolean); if (!nums.length) return toast('حداقل یک شماره وارد کنید'); let body = {name: $('f_name').value.trim(), phone: nums[0], phones: nums.slice(1), company: $('f_company').value.trim(), notes: $('f_notes').value.trim(), owner_extension: $('f_owner').value.trim(), customer_status: $('f_status').value, score: Number($('f_score').value || 50), next_followup: $('f_followup').value.replace('T', ' '), followup_note: $('f_followup_note').value.trim(), lost_reason: $('f_lost').value.trim()}; try {await api(currentContactId ? '/api/contacts/' + currentContactId : '/api/contacts', {method: currentContactId ? 'PUT' : 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)}); closeModal(); loadContacts(); load(); toast('مخاطب ذخیره شد')} catch (e) {toast('خطا در ذخیره: ' + e.message)} }
+        async function deleteContact() {if (!currentContactId || !confirm('مخاطب حذف شود؟')) return; try {await api('/api/contacts/' + currentContactId, {method: 'DELETE'}); closeModal(); loadContacts(); load(); toast('مخاطب حذف شد')} catch (e) {toast('خطا در حذف مخاطب')} }
+        async function importContacts(file) {if (!file) return; let fd = new FormData(); fd.append('file', file); try {let r = await api('/api/contacts/import', {method: 'POST', body: fd}); loadContacts(); load(); let msg = `ورود فایل: ${r.inserted} جدید، ${r.updated} بروزرسانی`; if (r.errors?.length) {msg += `، ${r.errors.length} خطا`; alert(msg + '\n\n' + r.errors.map(e => `سطر ${e.row}: ${e.error}`).join('\n'))} else toast(msg)} catch (e) {toast('خطا در ورود فایل: ' + e.message)} $('contactFile').value = ''}
+        async function openCustomer(phone) {try {let r = await api('/api/customer/' + encodeURIComponent(phone)); let c = r.contact; $('modalContent').innerHTML = `<h2>${esc(c ? c.name : phone)}</h2><p>شماره‌ها: ${esc(c ? (c.phones || [phone]).join('، ') : phone)} ${c && c.company ? ' | شرکت: ' + esc(c.company) : ''}</p>${c ? `<button class="btn" onclick="editContact(${c.id})">ویرایش مخاطب</button> <button class="btn warn" onclick="quickFollowup(${c.id})">پیگیری</button> <button class="btn primary" onclick="newOpportunityForCurrent(${c.id})">فرصت فروش</button>` : ''}<h3>تاریخچه تماس</h3>${table(r.calls)}${c ? `<h3>اطلاعات فروش</h3><p>وضعیت: <span class="tag">${esc(statusLabel(c.customer_status))}</span> | امتیاز: <b>${esc(c.score)}</b> | مسئول: <b>${esc(c.owner_extension || '-')}</b></p><div id="customerFollowups"></div>` : ''}`; $('modal').classList.add('show'); if (c) loadCustomerSales(c.id)} catch (e) {toast('خطا در دریافت سوابق')} }
+        async function loadCustomerSales(id) {try {let f = await api('/api/followups'); f = f.filter(x => x.contact_id === id); let o = await api('/api/opportunities'); o = o.filter(x => x.contact_id === id); $('customerFollowups').innerHTML = `<div><b>پیگیری‌ها:</b> ${f.length ? f.map(x => `${esc(x.due_at)} - ${esc(x.note)} <button class="btn success" onclick="completeFollowup(${x.id})">انجام شد</button>`).join('<br>') : '-'}<br><br><b>فرصت‌ها:</b> ${o.length ? o.map(x => `${esc(x.title || 'بدون عنوان')} - ${esc(statusLabel(x.stage))} - ${fmtMoney(x.value)}`).join('<br>') : '-'}</div>`} catch { } }
+        function closeModal() {$('modal').classList.remove('show')}
+        async function syncNow() {$('status').textContent = 'در حال همگام‌سازی...'; try {await api('/api/sync', {method: 'POST'}); await load(); if (!$('cdr').classList.contains('hidden')) await loadCdr(); $('status').textContent = 'همگام شد'} catch (e) {$('status').textContent = 'خطای Sync'; toast('خطا در Sync')} }
+        function showTab(id, b) {['dashboard', 'cdr', 'missedTab', 'contactsTab', 'salesTab', 'managementTab', 'reportsTab'].forEach(x => $(x).classList.toggle('hidden', x !== id)); document.querySelectorAll('.tabs button').forEach(x => x.classList.remove('active')); if (b) b.classList.add('active'); if (id === 'cdr') loadCdr(); if (id === 'missedTab') loadMissed(); if (id === 'contactsTab') loadContacts(); if (id === 'salesTab') loadSales(); if (id === 'managementTab') loadManagement(); if (id === 'reportsTab') loadInternalReports()}
+        function toast(msg) {$('toast').textContent = msg; $('toast').classList.add('show'); setTimeout(() => $('toast').classList.remove('show'), 4000)}
+        function hideLiveCall() {$('liveCall').classList.remove('show')}
+        function openLiveCustomer() {if (livePhone) openCustomer(livePhone); hideLiveCall()}
+        function addLiveContact() {if (!livePhone) return toast('شماره تماس مشخص نیست'); contactForm({name: $('liveCustomer').textContent === 'تماس جدید' ? '' : $('liveCustomer').textContent, phone: livePhone, phones: [], company: '', notes: 'تماس از اعلان زنده'});}
+        function fmtLiveDirection(d) {return d === 'outbound' ? 'خروجی' : d === 'internal' ? 'داخلی' : 'ورودی'}
+        function showLiveCall(e) {const phone = e.direction === 'outbound' ? (e.callee || e.caller) : (e.caller || e.callee); livePhone = phone || ''; const title = e.customer || e.caller_name || phone || 'تماس جدید'; $('liveCustomer').textContent = title; const prev = Array.isArray(e.previous_extensions) && e.previous_extensions.length ? e.previous_extensions.join('، ') : 'سابقه تماس موفق ثبت نشده'; $('liveMeta').innerHTML = `شماره: <b>${esc(phone || '-')}</b><br>شرکت: <b>${esc(e.company || '-')}</b><br>نوع: ${esc(fmtLiveDirection(e.direction || ''))}<br>داخلی فعلی: ${esc(e.answer_by || 'در انتظار پاسخ')}<br>تماس موفق قبلی با داخلی: <b>${esc(prev)}</b><br>وضعیت: ${esc(e.state || e.disposition || 'در حال تماس')}`; $('liveCall').classList.add('show')}
+        async function pollLive() {try {const e = await api('/api/live'); if (!e) return; if (e.active && e.seq > liveSeq) {liveSeq = e.seq; localStorage.setItem('ucm_live_seq', String(liveSeq)); showLiveCall(e)} if (!e.active) hideLiveCall(); if (liveSeq === 0 && e.seq) {liveSeq = e.seq; localStorage.setItem('ucm_live_seq', String(liveSeq)); if (e.active) showLiveCall(e)} } catch (err) {console.debug('live poll', err)} }
+        function outcomeForm(callId, phone, outcome = '', notes = '') {
+            $('modalContent').innerHTML = `<h2>ثبت نتیجه تماس</h2><p class="small">شماره: ${esc(phone || '-')}</p><div class="formgrid"><div class="field"><label>نتیجه</label><select id="co_outcome"><option value="پاسخ داد" ${outcome === 'پاسخ داد' ? 'selected' : ''}>پاسخ داد</option><option value="علاقه‌مند" ${outcome === 'علاقه‌مند' ? 'selected' : ''}>علاقه‌مند</option><option value="بعداً تماس بگیرید" ${outcome === 'بعداً تماس بگیرید' ? 'selected' : ''}>بعداً تماس بگیرید</option><option value="قیمت خواست" ${outcome === 'قیمت خواست' ? 'selected' : ''}>قیمت خواست</option><option value="خرید کرد" ${outcome === 'خرید کرد' ? 'selected' : ''}>خرید کرد</option><option value="عدم علاقه" ${outcome === 'عدم علاقه' ? 'selected' : ''}>عدم علاقه</option><option value="شماره اشتباه" ${outcome === 'شماره اشتباه' ? 'selected' : ''}>شماره اشتباه</option><option value="" ${!outcome ? 'selected' : ''}>-</option></select></div><div class="field"><label>یادداشت</label><textarea id="co_notes">${esc(notes || '')}</textarea></div></div><button class="btn primary" style="margin-top:14px" onclick="saveOutcome(${callId})">ذخیره</button>`; $('modal').classList.add('show')
         }
+        async function saveOutcome(id) {try {await api('/api/calls/' + id + '/outcome', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({outcome: $('co_outcome').value, notes: $('co_notes').value})}); closeModal(); toast('نتیجه تماس ثبت شد'); load();} catch (e) {toast('خطا در ثبت نتیجه: ' + e.message)} }
 
-        const signature =
-            String(validEvent.received_at || "") +
-            "|" +
-            String(validEvent.raw || "") +
-            "|" +
-            JSON.stringify(validEvent.payload?.normalized || {});
+        async function loadSales() {if (!currentUser || !['full', 'manager', 'sales'].includes(currentUser.role)) return; try {let a = await api('/api/action-center'); $('salesToday').textContent = a.today; $('salesOverdue').textContent = a.overdue; $('actionCenter').innerHTML = a.items.length ? a.items.map(x => `<div class="card" style="margin-bottom:9px"><b>${esc(x.customer || x.phone)}</b> — ${esc(x.due_at)}<br><span class="small">${esc(x.note || '')}</span><div style="margin-top:7px"><button class="btn" onclick="openCustomer('${esc(x.phone)}')">مشتری</button> <button class="btn success" onclick="completeFollowup(${x.id})">انجام شد</button></div></div>`).join('') : '<div class="empty">پیگیری فعالی وجود ندارد</div>'; let c = await api('/api/contacts'); $('hotCustomers').textContent = c.filter(x => Number(x.score) >= 80).length; let o = await api('/api/opportunities'); $('salesOpenOpps').textContent = o.filter(x => !['won', 'lost'].includes(x.stage)).length; $('pipeline').innerHTML = ['lead', 'contacted', 'negotiation', 'proposal', 'decision', 'won', 'lost'].map(st => `<div class="stage"><h4>${statusLabel(st)}</h4>${o.filter(x => x.stage === st).map(x => `<div class="item"><b>${esc(x.customer || x.phone)}</b><br><span class="small">${fmtMoney(x.value)}</span><br><span class="small">${esc(x.owner_extension || '-')}</span></div>`).join('') || '<span class="small">خالی</span>'}</div>`).join('')} catch (e) {console.debug('sales', e)} }
+        async function completeFollowup(id) {try {await api('/api/followups/' + id + '/complete', {method: 'POST'}); toast('پیگیری انجام شد'); loadSales(); if (currentContactId) { } } catch (e) {toast('خطا در ثبت پیگیری')} }
+        async function quickFollowup(contactId) {$('modalContent').innerHTML = `<h2>ثبت پیگیری</h2><div class="formgrid"><div class="field"><label>زمان</label><input id="q_due" type="datetime-local"></div><div class="field"><label>یادداشت</label><input id="q_note"></div></div><button class="btn primary" style="margin-top:14px" onclick="saveQuickFollowup(${contactId})">ثبت</button>`; $('modal').classList.add('show')}
+        async function saveQuickFollowup(id) {try {await api('/api/followups', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({contact_id: id, due_at: $('q_due').value.replace('T', ' '), note: $('q_note').value, owner_extension: currentUser?.extension || ''})}); closeModal(); toast('پیگیری ثبت شد'); load(); loadSales()} catch (e) {toast('خطا: ' + e.message)} }
+        function newOpportunity() {opportunityForm(null)}
+        function newOpportunityForCurrent(id = currentContactId) {if (!id) return toast('ابتدا مخاطب را انتخاب کنید'); opportunityForm({contact_id: id})}
+        function opportunityForm(o) {currentContactId = o?.contact_id || currentContactId; $('modalContent').innerHTML = `<h2>${o?.id ? 'ویرایش فرصت' : 'فرصت فروش جدید'}</h2><div class="formgrid"><div class="field"><label>مخاطب</label><select id="o_contact"></select></div><div class="field"><label>عنوان</label><input id="o_title" value="${esc(o?.title || '')}"></div><div class="field"><label>مرحله</label><select id="o_stage">${['lead', 'contacted', 'negotiation', 'proposal', 'decision', 'won', 'lost'].map(v => `<option value="${v}" ${o?.stage === v ? 'selected' : ''}>${statusLabel(v)}</option>`).join('')}</select></div><div class="field"><label>ارزش فروش (تومان)</label><input id="o_value" type="number" value="${Number(o?.value || 0)}"></div><div class="field"><label>داخلی مسئول</label><input id="o_owner" value="${esc(o?.owner_extension || currentUser?.extension || '')}"></div><div class="field"><label>تاریخ بستن</label><input id="o_close" type="date" value="${esc(o?.close_date || '')}"></div><div class="field"><label>دلیل از دست رفتن</label><input id="o_lost" value="${esc(o?.lost_reason || '')}"></div><div class="field full"><label>یادداشت</label><textarea id="o_notes">${esc(o?.notes || '')}</textarea></div></div><button class="btn primary" style="margin-top:14px" onclick="saveOpportunity(${o?.id || 0})">ذخیره</button>`; $('modal').classList.add('show'); loadOpportunityContacts(o?.contact_id || currentContactId || 0)}
+        async function loadOpportunityContacts(selected) {try {let c = await api('/api/contacts'); $('o_contact').innerHTML = c.map(x => `<option value="${x.id}" ${x.id === selected ? 'selected' : ''}>${esc(x.name || x.phone)} - ${esc(x.phone)}</option>`).join('')} catch (e) { } }
+        async function saveOpportunity(id) {try {let body = {contact_id: Number($('o_contact').value), title: $('o_title').value, stage: $('o_stage').value, value: Number($('o_value').value || 0), owner_extension: $('o_owner').value, close_date: $('o_close').value, lost_reason: $('o_lost').value, notes: $('o_notes').value}; await api(id ? '/api/opportunities/' + id : '/api/opportunities', {method: id ? 'PUT' : 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)}); closeModal(); toast('فرصت ذخیره شد'); load(); loadSales()} catch (e) {toast('خطا: ' + e.message)} }
+        async function loadManagement() {if (!currentUser || !['full', 'manager'].includes(currentUser.role)) return; try {let s = $('mgStart').value, e = $('mgEnd').value; let d = await api(`/api/management/dashboard?start=${encodeURIComponent(s)}&end=${encodeURIComponent(e)}`); let total = 0, ans = 0, miss = 0, sales = 0; d.rows.forEach(x => {total += x.total; ans += x.answered; miss += x.missed; sales += x.sales_value}); $('mgTotal').textContent = total; $('mgAnswered').textContent = ans; $('mgMissed').textContent = miss; $('mgSalesValue').textContent = fmtMoney(sales); $('mgRows').innerHTML = d.rows.length ? `<table class="table"><tr><th>رتبه</th><th>داخلی</th><th>کل تماس</th><th>پاسخ</th><th>بی‌پاسخ</th><th>نرخ پاسخ</th><th>فروش</th><th>مبلغ فروش</th></tr>${d.rows.map((x, i) => `<tr><td>${i + 1}</td><td><b>${esc(x.extension)}</b></td><td>${x.total}</td><td>${x.answered}</td><td>${x.missed}</td><td>${x.answer_rate}%</td><td>${x.sales}</td><td>${fmtMoney(x.sales_value)}</td></tr>`).join('')}</table>` : '<div class="empty">داده‌ای برای این بازه وجود ندارد</div>'; $('hourly').innerHTML = d.hourly.map(x => `<div class="barrow"><span>${String(x.hour).padStart(2, '0')}:00</span><div class="bar"><i style="width:${Math.min(100, x.calls * 4)}%"></i></div><b>${x.calls}</b></div>`).join(''); $('lostReasons').innerHTML = d.lost_reasons.length ? d.lost_reasons.map(x => `<div class="barrow"><span>${esc(x.reason)}</span><div class="bar"><i style="width:${Math.min(100, x.count * 8)}%"></i></div><b>${x.count}</b></div>`).join('') : '<div class="empty">دلیلی ثبت نشده است</div>'} catch (e) {toast('خطا در گزارش مدیریت: ' + e.message)} }
+        async function loadInternalReports() {if (!currentUser || !['full', 'manager'].includes(currentUser.role)) return; try {let s = $('rpStart').value, e = $('rpEnd').value; let rows = await api(`/api/internal-reports?start=${encodeURIComponent(s)}&end=${encodeURIComponent(e)}`); $('internalReports').innerHTML = rows.length ? `<table class="table"><tr><th>داخلی</th><th>کل</th><th>جواب داده</th><th>جواب نداده</th><th>نرخ پاسخ</th><th>فروش</th><th>مبلغ فروش</th></tr>${rows.map(x => `<tr><td><b>${esc(x.extension)}</b></td><td>${x.total}</td><td>${x.answered}</td><td>${x.missed}</td><td>${x.answer_rate}%</td><td>${x.sales}</td><td>${fmtMoney(x.sales_value)}</td></tr>`).join('')}</table>` : '<div class="empty">اطلاعاتی وجود ندارد</div>'} catch (e) {toast('گزارش داخلی‌ها: ' + e.message)} }
+        function setDefaultDates() {let d = new Date(); let iso = d.toISOString().slice(0, 10); $('mgStart').value = iso; $('mgEnd').value = iso; $('rpStart').value = iso; $('rpEnd').value = iso}
+        refreshMe(); setDefaultDates(); load(); setInterval(load, 15000); pollLive(); setInterval(pollLive, 1000)
+    </script>
+</body>
 
-        if (signature === lastLiveSignature) {
-            return;
-        }
-
-        lastLiveSignature = signature;
-
-        showLiveCall(validEvent);
-
-    } catch (error) {
-        console.debug("UCM live monitor:", error);
-    }
-}
-
-function startLiveMonitor() {
-
-    if (liveTimer) {
-        clearInterval(liveTimer);
-    }
-
-    /*
-     * بررسی هر یک ثانیه
-     * بنابراین تماس تقریباً لحظه‌ای روی داشبورد دیده می‌شود.
-     */
-
-    setInterval(
-        checkLiveCalls,
-        1000
-    );
-
-    checkLiveCalls();
-}
-
-
-if (document.readyState === "loading") {
-
-    document.addEventListener(
-        "DOMContentLoaded",
-        startLiveMonitor
-    );
-
-} else {
-
-    startLiveMonitor();
-}
-
-</script>
-
-</body></html>
+</html>
